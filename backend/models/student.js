@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const studentSchema = new mongoose.Schema(
   {
@@ -13,6 +14,11 @@ const studentSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    password: {
+      type: String,
+      required: [true, "Please enter the password of the student"],
+      trim: true,
+    },
     courseEnrollment: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -25,8 +31,16 @@ const studentSchema = new mongoose.Schema(
   },
 );
 
-studentSchema.pre("save", ()=>{
-  
-})
+studentSchema.pre("save", async (next) => {
+  if (!this.isModified("password")) {
+    next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+studentSchema.methods.matchPassword = async (enteredPassword) => {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 module.exports = mongoose.model("Student", studentSchema);
