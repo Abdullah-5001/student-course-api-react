@@ -16,12 +16,12 @@ const registerStudent = async (req, res, next) => {
       throw new Error("Student already exists");
     }
 
-    const student = await student.create({ name, email, password });
-    if (student) {
+    const registerStudent = await student.create({ name, email, password });
+    if (registerStudent) {
       res.status(201).json({
         success: true,
-        data: student,
-        token: generateToken(student._id),
+        data: registerStudent,
+        token: generateToken(registerStudent._id),
       });
     }
   } catch (error) {
@@ -38,12 +38,12 @@ const loginStudent = async (req, res, next) => {
         .json({ success: false, message: "Please fill all the fields" });
     }
 
-    const student = await student.findOne({ email });
-    if (student && (await student.matchPassword(password))) {
+    const loginStudent = await student.findOne({ email });
+    if (loginStudent && (await loginStudent.matchPassword(password))) {
       res.status(200).json({
         success: true,
-        data: student,
-        token: generateToken(student._id),
+        data: loginStudent,
+        token: generateToken(loginStudent._id),
       });
     } else {
       res

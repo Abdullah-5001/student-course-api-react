@@ -1,5 +1,5 @@
-const course = require("../models/Course");
-const student = require("../models/student");
+const Course = require("../models/Course");
+const Student = require("../models/student");
 
 const createCourse = async (req, res) => {
   try {
@@ -8,9 +8,9 @@ const createCourse = async (req, res) => {
       res.status(400);
       throw new Error("Please fill all the fields");
     }
-    const course = await course.create({ title, description, instructor });
-    if (course) {
-      res.status(201).json({ success: true, data: course });
+    const addedCourse = await Course.create({ title, description, instructor });
+    if (addedCourse) {
+      res.status(201).json({ success: true, data: addedCourse });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -19,7 +19,7 @@ const createCourse = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await course.find();
+    const courses = await Course.find();
     if (courses) {
       res.status(200).json({ success: true, data: courses });
     }
@@ -33,38 +33,47 @@ const enrollCourse = async (req, res) => {
     const courseId = req.params.id;
     const studentId = req.body.studentId;
 
-    const course = await course.findById(courseId);
-    if (!course) {
+    if (!studentId) {
+      res.status(400);
+      throw new Error("studentId is required");
+    }
+
+    const foundCourse = await Course.findById(courseId);
+    if (!foundCourse) {
       res.status(404);
       throw new Error("Course not found");
     }
-    const student = await student.findById(studentId);
-    if (!student) {
+    const foundStudent = await Student.findById(studentId);
+    if (!foundStudent) {
       res.status(404);
       throw new Error("Student not found");
     }
 
-    if (course.enrollStudents.includes(studentId)) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Student already enrolled in this course",
-        });
+    if (!Array.isArray(foundCourse.enrolledStudents)) {
+      foundCourse.enrolledStudents = [];
     }
 
-    course.enrollStudents.push(studentId);
-    await course.save();
-
-    student.courseEnrollment.push(courseId);
-    await student.save();
-
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Student enrolled in the course successfully",
+    if (
+      foundCourse.enrolledStudents.some(
+        (id) => id.toString() === studentId.toString(),
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Student already enrolled in this course",
       });
+    }
+
+    foundCourse.enrolledStudents.push(studentId);
+    await foundCourse.save();
+
+    foundStudent.courseEnrollment.push(courseId);
+    await foundStudent.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Student enrolled in the course successfully",
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
